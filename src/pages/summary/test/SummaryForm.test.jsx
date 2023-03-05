@@ -43,3 +43,24 @@ test("the button should be disabled if the checkbox is not checked once again", 
   expect(checkbox).not.toBeChecked();
   expect(button).toBeDisabled();
 });
+
+test("popover responds to hover", async () => {
+  render(<SummaryForm />);
+  const user = userEvent.setup();
+
+  // popover starts not in the DOM
+  const nullPopover = screen.queryByText(
+    /no ice cream will actually be delivered/i
+  );
+  expect(nullPopover).not.toBeInTheDocument();
+
+  // popover shows in the dom with hover on checkbox
+  const checkbox = screen.getByText(/Terms and Conditions/i);
+  await user.hover(checkbox);
+  const popover = screen.getByText(/no ice cream will actually be delivered/i);
+  expect(popover).toBeInTheDocument();
+
+  //popover disappears when unhover happens
+  await user.unhover(checkbox);
+  expect(popover).not.toBeInTheDocument();
+});
