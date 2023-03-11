@@ -3,52 +3,67 @@ import { pricePerItem } from "../constants";
 
 const OrderDetails = createContext();
 
-// Custom hook to be used instead of OrderDetails to check if it's created within provider first
+// create custom hook to check whether we're in a provider
 export function useOrderDetails() {
-  const orderContext = useContext(OrderDetails);
+  const contextValue = useContext(OrderDetails);
 
-  if (!orderContext) {
-    throw new Error("Context must be called within its provider");
+  if (!contextValue) {
+    throw new Error(
+      "useOrderDetails must be called from within an OrderDetailsProvider"
+    );
   }
 
-  return orderContext;
+  return contextValue;
 }
 
 export function OrderDetailsProvider(props) {
-  const [orderCounts, setOrderCounts] = useState({
-    scoops: {},
-    toppings: {},
+  const [optionCounts, setOptionCounts] = useState({
+    scoops: {}, // example: { Chocolate: 1, Vanilla: 2 }
+    toppings: {}, // example: { "Gummi Bears": 1 }
   });
 
-  const updateItemCount = (optionType, itemName, newCount) => {
-    const updatedOrders = { ...orderCounts };
-    updatedOrders[optionType][itemName] = newCount;
+  function updateItemCount(itemName, newItemCount, optionType) {
+    // make a copy of existing state
+    const newOptionCounts = { ...optionCounts };
 
-    setOrderCounts(updatedOrders);
-  };
+    // update the copy with the new information
+    newOptionCounts[optionType][itemName] = newItemCount;
 
-  const resetOrder = () => {
-    setOrderCounts({
-      scoops: {},
-      toppings: {},
-    });
-  };
+    // update the state with the updated copy
+    setOptionCounts(newOptionCounts);
 
-  const calculateTotal = (optionType) => {
-    const counts = Object.values(orderCounts[optionType]);
-    const totalCount = counts.reduce((total, current) => total + current, 0);
+    // alternate way using function argument to setOptionCounts
+    // see https://www.udemy.com/course/react-testing-library/learn/#questions/18721990/
+    // setOptionCounts((previousOptionCounts) => ({
+    //   ...previousOptionCounts,
+    //   [optionType]: {
+    //     ...previousOptionCounts[optionType],
+    //     [itemName]: newItemCount,
+    //   },
+    // }));
+  }
+
+  function resetOrder() {
+    setOptionCounts({ scoops: {}, toppings: {} });
+  }
+
+  // utility function to derive totals from optionCounts state value
+  function calculateTotal(optionType) {
+    // get an array of counts for the option type (for example, [1, 2])
+    const countsArray = Object.values(optionCounts[optionType]);
+
+    // total the values in the array of counts for the number of items
+    const totalCount = countsArray.reduce((total, value) => +total + +value, 0);
+
+    // multiply the total number of items by the price for this item type
     return totalCount * pricePerItem[optionType];
-  };
+  }
 
   const totals = {
     scoops: calculateTotal("scoops"),
     toppings: calculateTotal("toppings"),
   };
 
-  return (
-    <OrderDetails.Provider
-      value={(orderCounts, totals, updateItemCount, resetOrder)}
-      {...props}
-    />
-  );
+  const value = { optionCounts, totals, updateItemCount, resetOrder };
+  return <OrderDetails.Provider value={value} {...props} />;
 }

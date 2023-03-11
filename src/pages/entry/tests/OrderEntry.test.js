@@ -1,6 +1,6 @@
 import { rest } from "msw";
 import { server } from "../../../mocks/servers";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../../testing-utils/testing-library-utils";
 import OrderEntry from "../OrderEntry";
 
 test("Showing alerts when server responds back with error", async () => {
